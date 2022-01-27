@@ -126,4 +126,4 @@ Return only *_id* and *name*.
 Return only the documents that contains the field *note*.
 
 
-Visit [MongoDB's operators](https://docs.mongodb.com/manual/reference/operator/) for more.
+Visit [MongoDB operators](https://docs.mongodb.com/manual/reference/operator/) or [MongoDB developer](https://docs.mongodb.com/developer/) for more.

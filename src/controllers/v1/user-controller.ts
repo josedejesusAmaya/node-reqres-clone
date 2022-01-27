@@ -1,23 +1,68 @@
 import { Request, Response } from 'express';
+// import { Types } from 'mongoose';
+import bcrypt from 'bcrypt';
 
-import { users } from '../../data/users';
+import { Users, User } from '../../db/schemas/user';
+import { Products } from '../../db/schemas/product';
+import { sendError, validateObjectId } from '../../utils/response';
 
-export const getUsers = (req: Request, res: Response): void => {
-  res.send({
-    page: 2,
-    per_page: 6,
-    total: 12,
-    total_pages: 2,
-    data: users,
-    support: {
-      url: 'https://reqres.in/#support-heading',
-      text: 'To keep ReqRes free, contributions towards server costs are appreciated!',
-    },
-  });
+export const getUsers = async (req: Request, res: Response): Promise<void> => {
+  const users: User[] = await Users.find().select({ password: 0, __v: 0 });
+  res.send(users);
 };
 
-export const getUserById = (req: Request, res: Response): void => {
-  const { userId } = req.params;
-  const index: number = users.findIndex((item) => item.id === Number(userId));
-  index !== -1 ? res.send({ data: users[index] }) : res.status(404).send({});
+export const getUserById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId: string = req.params.id;
+    validateObjectId(userId);
+    // const user = await Users.findById(new Types.ObjectId(userId)); // not necesary to cast
+    // const user = await Users.findById(userId).select('id');
+    // const user = await Users.findById(userId).select({ _id: 1 });
+    const user = await Users.findById(userId).select({ password: 0, __v: 0 });
+    user ? res.send(user) : res.status(404).send({});
+  } catch (e) {
+    sendError(res, e);
+  }
+};
+
+export const createUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { email, first_name, last_name, avatar, password }: User = req.body;
+  try {
+    const hash: string = await bcrypt.hash(password, 15);
+    const newUser = await Users.create({
+      email,
+      first_name,
+      last_name,
+      avatar,
+      password: hash,
+    });
+    res.send(newUser);
+  } catch (e) {
+    sendError(res, e);
+  }
+};
+
+export const deleteUserById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId: string = req.params.id;
+    validateObjectId(userId);
+    const deletedUser = await Users.findByIdAndDelete(userId);
+    if (deletedUser) {
+      const deletedProducts = await Products.deleteMany({ user: deletedUser._id }); // cast to ObjectId
+      deletedProducts ? res.send('Ok') : res.status(404).send({});
+    } else {
+      res.status(404).send({});
+    }
+  } catch (e: any) {
+    sendError(res, e);
+  }
 };

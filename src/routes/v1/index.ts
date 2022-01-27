@@ -1,14 +1,19 @@
 import { Application } from 'express';
 
 import * as usersController from '../../controllers/v1/user-controller';
-import productsController from '../../controllers/v1/product-controller';
-import errorRoute from '../../midlewares/midleware';
+import * as productsController from '../../controllers/v1/product-controller';
+import errorRoute from '../../utils/midleware';
 
 const createRoutesV1 = (app: Application): void => {
+    // users
     app.get('/api/v1/users', usersController.getUsers);
-    app.get('/api/v1/users/:userId', usersController.getUserById);
+    app.post('/api/v1/users/create', usersController.createUsers);
+    app.get('/api/v1/users/:id', usersController.getUserById);
+    app.delete('/api/v1/users/:id', usersController.deleteUserById);
+    
+    // products
     app.get('/api/v1/products', productsController.getProducts);
-    app.get('/api/v1/products/:productId', productsController.getProductById);
+    app.get('/api/v1/products/:id', productsController.getProductById);
     app.post('/api/v1/products/create', productsController.createProduct);
     app.put('/api/v1/products/:id', productsController.updateProduct);
     app.patch('/api/v1/products/:id', productsController.partialUpdateProduct);
@@ -17,7 +22,5 @@ const createRoutesV1 = (app: Application): void => {
 
     app.use(errorRoute);
 }
-
-
 
 export default createRoutesV1;
