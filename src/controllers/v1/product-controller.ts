@@ -11,7 +11,6 @@ const getProducts = async (req: Request, res: Response): Promise<void> => {
   const total: number = await Products.count();
   const totalPages: number = Math.ceil(total / perPage);
   const start: number = (page - 1) * perPage;
-  // const end: number = page * perPage;
   const products: Product[] = await Products.find().skip(start).limit(perPage);
 
   res.send({
