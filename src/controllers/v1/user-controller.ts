@@ -81,7 +81,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const expiresInSeg = 60 * 60;
-    const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: expiresInSeg });
+    const token = jwt.sign({ userId: user._id, email: user.email }, process.env.SECRET_JWT!, { expiresIn: expiresInSeg });
     res.send({ token, expiresIn: expiresInSeg });
   } catch (e) {
     sendError(res, e);

@@ -2,7 +2,7 @@ import { Application } from 'express';
 
 import userRouter from './user-router';
 import userProduct from './product-router';
-import errorRoute from '../../utils/midleware';
+import errorRoute from '../../middleware/error-middleware';
 
 const createRoutesV1 = (app: Application): void => {
     app.use('/api/v1/users', userRouter);

@@ -2,16 +2,23 @@ import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 
 import { Products, Product } from '../../db/schemas/product';
+import { CustomRequest } from '../../middleware/auth-middleware';
 import { sendError, validateObjectId } from '../../utils/response';
 
 const getProducts = async (req: Request, res: Response): Promise<void> => {
   const query = req.query;
   const page = Number(query.page);
   const perPage = 3;
-  const total: number = await Products.count();
+  const myReq = req as CustomRequest;
+  const user = myReq.session.userId;
+  const total: number = await Products.count({ user });
   const totalPages: number = Math.ceil(total / perPage);
   const start: number = (page - 1) * perPage;
-  const products: Product[] = await Products.find().skip(start).limit(perPage);
+  const products: Product[] = await Products.find({
+    user,
+  })
+    .skip(start)
+    .limit(perPage);
 
   res.send({
     page: page,
@@ -29,8 +36,12 @@ const getProducts = async (req: Request, res: Response): Promise<void> => {
 const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
     const productId: string = req.params.id;
+    const myReq = req as CustomRequest;
     validateObjectId(productId);
-    const product = await Products.findById(productId).populate({
+    const product = await Products.findOne({
+      _id: productId,
+      user: myReq.session.userId,
+    }).populate({
       path: 'user',
       select: { password: 0, __v: 0 },
     });
@@ -42,8 +53,10 @@ const getProductById = async (req: Request, res: Response): Promise<void> => {
 
 const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, year, price, color, pantone_value, user }: Product = req.body;
-    validateObjectId(user as string);
+    const myReq = req as CustomRequest;
+    const { name, year, price, color, pantone_value } = req.body;
+    const user = myReq.session.userId;
+    validateObjectId(user);
     const newProduct = await Products.create({
       name,
       year,
@@ -60,11 +73,10 @@ const createProduct = async (req: Request, res: Response): Promise<void> => {
 
 const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
+    const myReq = req as CustomRequest;
     const productId: string = req.params.id;
-    const { name, year, price, color, pantone_value, user }: Product = req.body;
-    if (user) {
-      validateObjectId(user as string);
-    }
+    const { name, year, price, color, pantone_value } = req.body;
+    const user = myReq.session.userId;
     const newData = {
       name,
       year,
@@ -73,8 +85,10 @@ const updateProduct = async (req: Request, res: Response): Promise<void> => {
       pantone_value,
       user,
     };
-    validateObjectId(productId);
-    const updatedProduct = await Products.findByIdAndUpdate(productId, newData); // return the data before the update
+    const updatedProduct = await Products.findOneAndUpdate(
+      { _id: productId, user },
+      newData
+    ); // return the data before the update
     updatedProduct ? res.send({ data: 'Ok' }) : res.status(404).send({});
   } catch (e) {
     sendError(res, e);
@@ -86,20 +100,21 @@ const partialUpdateProduct = async (
   res: Response
 ): Promise<void> => {
   try {
+    const myReq = req as CustomRequest;
     const productId: string = req.params.id;
     validateObjectId(productId);
-    const { name, year, price, color, pantone_value, user }: Product = req.body;
-    if (user) {
-      validateObjectId(user as string);
-    }
-    const product = await Products.findById(productId);
+    const { name, year, price, color, pantone_value } = req.body;
+    const user = myReq.session.userId;
+    const product = await Products.findOne({
+      _id: productId,
+      user,
+    });
     if (product) {
       product.name = name || product.name;
       product.year = year || product.year;
       product.price = price || product.price;
       product.color = color || product.color;
       product.pantone_value = pantone_value || product.pantone_value;
-      product.user = user || product.user;
 
       await product.save();
       res.send({ data: product });
@@ -112,31 +127,31 @@ const partialUpdateProduct = async (
 };
 
 const updateProductAndNotify = async (
-  req: Request, 
+  req: Request,
   res: Response
-  ): Promise<void> => {
+): Promise<void> => {
   try {
+    const myReq = req as CustomRequest;
     const productId: string = req.params.id;
     validateObjectId(productId);
     const { client, data } = req.body;
-    const { name, year, price, color, pantone_value, user }: Product = data;
-
-    if (user) {
-      validateObjectId(user as string);
-    }
-    const product = await Products.findById(productId);
+    const { name, year, price, color, pantone_value } = data;
+    const user = myReq.session.userId;
+    const product = await Products.findOne({
+      _id: productId,
+      user,
+    });
     if (product) {
       product.name = name || product.name;
       product.year = year || product.year;
       product.price = price || product.price;
       product.color = color || product.color;
       product.pantone_value = pantone_value || product.pantone_value;
-      product.user = user || product.user;
 
       await product.save();
       res.send({ data: product, message: `Email sent to ${client}` });
     } else {
-      res.status(404).send({}); 
+      res.status(404).send({});
     }
   } catch (e: any) {
     sendError(res, e);
@@ -148,10 +163,13 @@ const deleteProductById = async (
   res: Response
 ): Promise<void> => {
   try {
+    const myReq = req as CustomRequest;
     const productId: string = req.params.id;
     validateObjectId(productId);
+    const user = myReq.session.userId;
     const deleted = await Products.deleteOne({
-      _id: new Types.ObjectId(productId),
+      _id: productId,
+      user,
     });
     deleted.deletedCount > 0 ? res.send({}) : res.status(404).send({});
   } catch (e: any) {
