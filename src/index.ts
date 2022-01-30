@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 import connectToDB from './db/connection';
 import apiV1 from './routes/v1';
@@ -13,6 +14,10 @@ const urlencodedParser = bodyParser.urlencoded({ extended: false });
 const jsonParser = bodyParser.json();
 app.use(urlencodedParser);
 app.use(jsonParser);
+const corsOptions = {
+    origin: 'https://josedejesusamaya.github.io/'
+}
+app.use(cors());
 
 apiV1(app);
 
