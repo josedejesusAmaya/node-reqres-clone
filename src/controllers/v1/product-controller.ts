@@ -53,6 +53,7 @@ const getProductById = async (req: Request, res: Response): Promise<void> => {
 
 const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log(req.body);
     const myReq = req as CustomRequest;
     const { name, year, price, color, pantone_value } = req.body;
     const user = myReq.session.userId;
@@ -133,7 +134,6 @@ const updateProductAndNotify = async (
   try {
     const myReq = req as CustomRequest;
     const productId: string = req.params.id;
-    validateObjectId(productId);
     const { client, data } = req.body;
     const { name, year, price, color, pantone_value } = data;
     const user = myReq.session.userId;
@@ -165,7 +165,7 @@ const deleteProductById = async (
   try {
     const myReq = req as CustomRequest;
     const productId: string = req.params.id;
-    validateObjectId(productId);
+    // validateObjectId(productId);
     const user = myReq.session.userId;
     const deleted = await Products.deleteOne({
       _id: productId,
