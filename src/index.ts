@@ -8,7 +8,7 @@ import apiV1 from './routes/v1';
 
 dotenv.config();
 
-const PORT: string = process.env.MONGODB_ADDON_PORT!;
+const PORT = Number(process.env.MONGODB_ADDON_PORT);
 const app: Application = express();
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
 const jsonParser = bodyParser.json();
